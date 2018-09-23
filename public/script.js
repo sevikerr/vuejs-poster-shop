@@ -1,7 +1,8 @@
-new Vue({
+var vm = new Vue({
   el: '#app',
   data: {
     total: 0,
+    results: [],
     items: [
       {id: 1, price: 9.99, title: 'Html 5'},
       {id: 2, price: 10.99, title: 'Css 3'},
@@ -13,20 +14,27 @@ new Vue({
     loading: false,
   },
   methods: {
+    appendItems: function () {
+      if (this.items.length === this.results.length) {
+        return;
+      }
+      this.items = this.results.slice(0, this.items.length + 10);
+    },
     submitForm: function () {
       this.loading = true;
       this.$http
         .get("/search/".concat(this.newSearch))
         .then((response) => {
-          this.items = [];
+          this.results = [];
           response.data.forEach(item => {
-            this.items.push({
+            this.results.push({
               id: item.id,
               title: item.title,
               price: 9.99,
               image: item.link
             });
           });
+          this.items = this.results.slice(0, 10);
           this.loading = false;
           this.oldSearch = this.newSearch;
         });
@@ -83,5 +91,16 @@ new Vue({
   },
   mounted: function () {
     this.submitForm();
+
+    var el = document.getElementById('product-list-bottom');
+    var watcher = scrollMonitor.create(el);
+    watcher.enterViewport(() => {
+      this.appendItems();
+    });
+  },
+  computed: {
+    noMoreItems: function () {
+      return this.results.length > 0 && this.results.length === this.items.length;
+    }
   }
 });
